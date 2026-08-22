@@ -1,410 +1,170 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Gameloft Games</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <meta name="format-detection" content="telephone=no" >
-    <meta name="viewport" content="width=device-width, target-densitydpi=device-dpi, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="mobileoptimized" content="0" />
-    <style type="text/css">
-        @-ms-viewport{
-            width: device-width !important;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RHINO 28000 | Clothing & Gadgets</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f8fafc; color: #0f172a; }
+        
+        /* Navigation Header */
+        header { background: #0f172a; color: white; padding: 20px 5%; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .logo { font-size: 26px; font-weight: 900; letter-spacing: 1px; color: #38bdf8; }
+        .cart-icon { background: #1e293b; border: 1px solid #334155; color: white; padding: 10px 20px; border-radius: 6px; cursor: pointer; position: relative; font-weight: bold; transition: 0.2s; }
+        .cart-icon:hover { background: #334155; }
+        .cart-count { background: #38bdf8; color: #0f172a; padding: 2px 8px; border-radius: 50%; font-size: 12px; margin-left: 8px; font-weight: bold; }
+
+        /* Storefront Layout */
+        .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+        .section-title { font-size: 24px; margin-bottom: 25px; padding-bottom: 10px; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; letter-spacing: 0.5px; }
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; margin-bottom: 50px; }
+        
+        /* Product Display Cards */
+        .product-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.06); transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid #e2e8f0; }
+        .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .product-img { width: 100%; height: 280px; background-size: cover; background-position: center; background-color: #f1f5f9; }
+        .product-info { padding: 20px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .product-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; color: #1e293b; min-height: 44px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .product-price { font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 15px; }
+        .add-btn { background: #0f172a; color: white; border: none; width: 100%; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .add-btn:hover { background: #38bdf8; color: #0f172a; }
+
+        /* Sliding Cart Drawer */
+        .cart-drawer { position: fixed; top: 0; right: -420px; width: 420px; height: 100%; background: white; box-shadow: -10px 0 25px -5px rgba(0,0,0,0.1); z-index: 200; transition: right 0.3s ease; padding: 30px; display: flex; flex-direction: column; }
+        .cart-drawer.open { right: 0; }
+        .cart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0; }
+        .close-btn { background: none; border: none; font-size: 28px; cursor: pointer; color: #64748b; }
+        .cart-items { flex: 1; overflow-y: auto; }
+        .cart-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #f1f5f9; }
+        .cart-item-details h4 { font-size: 14px; color: #1e293b; margin-bottom: 4px; }
+        .cart-total { font-size: 22px; font-weight: bold; display: flex; justify-content: space-between; padding-top: 20px; border-top: 1px solid #e2e8f0; margin-bottom: 20px; }
+        .checkout-btn { background: #38bdf8; color: #0f172a; border: none; width: 100%; padding: 16px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .checkout-btn:hover { background: #0ea5e9; color: white; }
+        
+        /* Dark Background Overlay */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); z-index: 150; display: none; backdrop-filter: blur(4px); }
+        .overlay.show { display: block; }
+
+        @media (max-width: 480px) {
+            .cart-drawer { width: 100%; right: -100%; }
         }
     </style>
-    <script type="text/javascript">
-        // Globals set on the fly
-        var WEBVIEW_RECEIVED_WIDTH = 0;
-        var WEBVIEW_RECEIVED_HEIGHT = 0;
-        var WEBVIEW_RECEIVED_OS = '';
-        var WEBVIEW_RECEIVED_DLS = '';
-
-
-        // Viewport dimensions getter
-        function getViewportDimensions()
-        {
-            var viewportWidth;
-            var viewportHeight;
-
-            // the more standards compliant browsers (mozilla/netscape/opera/IE7) use window.innerWidth and window.innerHeight
-
-            if (typeof window.innerWidth != 'undefined')
-            {
-                viewportWidth = window.innerWidth;
-                viewportHeight = window.innerHeight;
-            }
-            // IE6 in standards compliant mode (i.e. with a valid doctype as the first line in the document)
-            else if (typeof document.documentElement != 'undefined'
-                && typeof document.documentElement.clientWidth !=
-                'undefined' && document.documentElement.clientWidth != 0)
-            {
-                viewportWidth = document.documentElement.clientWidth;
-                viewportHeight = document.documentElement.clientHeight;
-            }
-            // older versions of IE
-            else
-            {
-                viewportWidth = document.getElementsByTagName('body')[0].clientWidth;
-                viewportHeight = document.getElementsByTagName('body')[0].clientHeight;
-            }
-
-                            return {
-                    width: viewportWidth,
-                    height: viewportHeight,
-                    paddingWidth: 0,
-                    paddingHeight: 0
-                };
-                    }
-
-        // WEBVIEW data fetcher
-        function webviewFetcher()
-        {
-            // Storing param string (e.g. OS=WP8&width=xxx&height=yyy)
-            param_string = '';
-
-            // Getting data from "?"
-            if(location.href && location.href.indexOf('?') != -1)
-            {
-                url_array = location.href.split('?');
-                if(url_array[1] != '')
-                {
-                    param_string = url_array[1];
-
-                    // If we have a hash in there too, split it and take the first part
-                    if(url_array[1].indexOf('#') != -1)
-                    {
-                        hash_array = url_array[1].split('#');
-                        param_string = hash_array[0];
-                    }
-                }
-            }
-
-            // Getting data from "#"
-            if(window.location.hash)
-            {
-                hash_string = window.location.hash.substring(1);
-                if(hash_string != '' && hash_string != undefined)
-                {
-                    param_string = hash_string;
-                }
-            }
-
-            if(param_string != '')
-            {
-                param_array = param_string.split('&');
-                param_array_len = param_array.length;
-                for(i = 0; i < param_array_len; i++)
-                {
-                    // Processing hash
-                    param_element = param_array[i];
-                    param_element_array = param_element.split('=');
-                    param_element_key = param_element_array[0];
-                    param_element_value = param_element_array[1];
-
-                    // if value is present
-                    if(param_element_value != '' && param_element_value != 0 && undefined != param_element_value)
-                    {
-                        // setting received values
-                        switch(param_element_key)
-                        {
-                            case 'width':
-                                if(!isNaN(param_element_value))
-                                {
-                                    WEBVIEW_RECEIVED_WIDTH = param_element_value;
-                                }
-                                break;
-
-                            case 'height':
-                                if(!isNaN(param_element_value))
-                                {
-                                    WEBVIEW_RECEIVED_HEIGHT = param_element_value;
-                                }
-                                break;
-
-                            case 'OS':
-                                WEBVIEW_RECEIVED_OS = param_element_value;
-                                break;
-
-                            case 'dls':
-                                WEBVIEW_RECEIVED_DLS = param_element_value;
-                                break;
-                        }
-                    }
-                }
-            }
-
-            // width &height fallback (can't only fallback for one
-            if(((WEBVIEW_RECEIVED_WIDTH == 0 || isNaN(WEBVIEW_RECEIVED_WIDTH))) ||
-                ((WEBVIEW_RECEIVED_HEIGHT == 0 || isNaN(WEBVIEW_RECEIVED_HEIGHT))))
-            {
-                viewPortDimensions = getViewportDimensions();
-                WEBVIEW_RECEIVED_WIDTH = viewPortDimensions['width'];
-                WEBVIEW_RECEIVED_HEIGHT = viewPortDimensions['height'];
-            }
-
-            // validating OS string; fallback on ios
-            supported_os = {
-                WP8: true,
-                windows: true,
-                android: true,
-                ios: true,
-                html5: true,
-                steam: true,
-                nintendoSwitch: true
-            };
-            if(!supported_os[WEBVIEW_RECEIVED_OS])
-            {
-                WEBVIEW_RECEIVED_OS = 'ios';
-            }
-        }
-
-        webviewFetcher();
-
-        function adjustMetas(height, width)
-        {
-            // IE Tag adjust
-            if(WEBVIEW_RECEIVED_OS == 'windows' && height && width)
-            {
-                var metas = document.getElementsByTagName("meta");
-                for (var i=0; i < metas.length; i++)
-                {
-                    if (metas[i].getAttribute("name") && metas[i].getAttribute("name")=="viewport")
-                    {
-                        metas[i].setAttribute("content", "width=" + width + ", height= " + height + ", initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no");
-                    }
-                }
-            }
-        }
-
-        //adjustMetas(WEBVIEW_RECEIVED_HEIGHT, WEBVIEW_RECEIVED_WIDTH);
-
-        function goToLink(strLink)
-        {
-            if(strLink == 'xpromo:')
-            {
-                // By default use the web link
-                strLink = xpromo_links['web'];
-
-                // If we have a DLS and that DLS has a link set, use it
-                if(typeof WEBVIEW_RECEIVED_DLS != 'undefined' && WEBVIEW_RECEIVED_DLS != '' &&
-                    typeof xpromo_links[WEBVIEW_RECEIVED_DLS] != 'undefined' && xpromo_links[WEBVIEW_RECEIVED_DLS] != '')
-                {
-                    strLink = xpromo_links[WEBVIEW_RECEIVED_DLS];
-
-                    if(typeof xpromo_replacers != 'undefined' &&
-                        typeof xpromo_replacers[WEBVIEW_RECEIVED_DLS] == 'object' &&
-                        xpromo_replacers[WEBVIEW_RECEIVED_DLS] != null)
-                    {
-                        for (var toReplace in xpromo_replacers[WEBVIEW_RECEIVED_DLS]) {
-                            try
-                            {
-                                var replacer = eval(xpromo_replacers[WEBVIEW_RECEIVED_DLS][toReplace]);
-                                if(typeof replacer != "undefined" &&
-                                    replacer != '')
-                                {
-                                    strLink = strLink.replace(toReplace, replacer);
-                                }
-                                else
-                                {
-                                    strLink = strLink.replace(toReplace, 'unknown');
-                                }
-                            }
-                            catch(e)
-                            {
-                                //alert(e.message);
-                            }
-                        }
-                    }
-                }
-            }
-
-            if(WEBVIEW_RECEIVED_OS == 'html5') // html5 "OS"
-            {
-                if (window.self !== window.top)
-                {
-                    parent.postMessage(strLink, '*');
-                }
-            }
-            else if(WEBVIEW_RECEIVED_OS == 'WP8' || WEBVIEW_RECEIVED_OS == 'windows') // windows OS
-            {
-                window.external.notify(strLink);
-            }
-            else if (WEBVIEW_RECEIVED_OS === 'nintendoSwitch') // nx
-            {
-                window.location.href =  "popuplink:" + strLink;
-
-            }
-            else // all other OS
-            {
-                window.location.href = strLink;
-
-            }
-        }
-
-        function autoClose(msg)
-        {
-            goToLink('exit:' + msg);
-        }
-
-        function touchEventHandler(event, obj)
-        {
-            obj.blur();
-            redir(obj.href);
-            event.preventDefault();
-            return false;
-        }
-
-    </script>
-    <link href="css/base.css" rel="stylesheet">
 </head>
 <body>
-            <script type="text/javascript">
-            if(WEBVIEW_RECEIVED_OS == 'WP8' || WEBVIEW_RECEIVED_OS == 'windows')
-            {
-                document.body.style.backgroundColor = '#000000';
-            }
-        </script>
-        <table id="loading">
-        <tr>
-            <td>
-                <img src="data:image/gif;base64,R0lGODlhNgA3APMAAP////////7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/v7+/gAAAAAAAAAAAAAAAAAAACH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCgAAACwAAAAANgA3AAAEzBDISau9OOvNu/9gKI5kaZ4lkhBEgqCnws6EApMITb93uOqsRC8EpA1Bxdnx8wMKl51ckXcsGFiGAkamsy0LA9pAe1EFqRbBYCAYXXUGk4DWJhZN4dlAlMSLRW80cSVzM3UgB3ksAwcnamwkB28GjVCWl5iZmpucnZ4cj4eWoRqFLKJHpgSoFIoEe5ausBeyl7UYqqw9uaVrukOkn8LDxMXGx8ibwY6+JLxydCO3JdMg1dJ/Is+E0SPLcs3Jnt/F28XXw+jC5uXh4u89EQAh+QQJCgAAACwAAAAANgA3AAAEzhDISau9OOvNu/9gKI5kaZ5oqhYGQRiFWhaD6w6xLLa2a+iiXg8YEtqIIF7vh/QcarbB4YJIuBKIpuTAM0wtCqNiJBgMBCaE0ZUFCXpoknWdCEFvpfURdCcM8noEIW82cSNzRnWDZoYjamttWhphQmOSHFVXkZecnZ6foKFujJdlZxqELo1AqQSrFH1/TbEZtLM9shetrzK7qKSSpryixMXGx8jJyifCKc1kcMzRIrYl1Xy4J9cfvibdIs/MwMue4cffxtvE6qLoxubk8ScRACH5BAkKAAAALAAAAAA2ADcAAATOEMhJq7046827/2AojmRpnmiqrqwwDAJbCkRNxLI42MSQ6zzfD0Sz4YYfFwyZKxhqhgJJeSQVdraBNFSsVUVPHsEAzJrEtnJNSELXRN2bKcwjw19f0QG7PjA7B2EGfn+FhoeIiYoSCAk1CQiLFQpoChlUQwhuBJEWcXkpjm4JF3w9P5tvFqZsLKkEF58/omiksXiZm52SlGKWkhONj7vAxcbHyMkTmCjMcDygRNAjrCfVaqcm11zTJrIjzt64yojhxd/G28XqwOjG5uTxJhEAIfkECQoAAAAsAAAAADYANwAABM0QyEmrvTjrzbv/YCiOZGmeaKqurDAMAlsKRE3EsjjYxJDrPN8PRLPhhh8XDMk0KY/OF5TIm4qKNWtnZxOWuDUvCNw7kcXJ6gl7Iz1T76Z8Tq/b7/i8qmCoGQoacT8FZ4AXbFopfTwEBhhnQ4w2j0GRkgQYiEOLPI6ZUkgHZwd6EweLBqSlq6ytricICTUJCKwKkgojgiMIlwS1VEYlspcJIZAkvjXHlcnKIZokxJLG0KAlvZfAebeMuUi7FbGz2z/Rq8jozavn7Nev8CsRACH5BAkKAAAALAAAAAA2ADcAAATLEMhJq7046827/2AojmRpnmiqrqwwDAJbCkRNxLI42MSQ6zzfD0Sz4YYfFwzJNCmPzheUyJuKijVrZ2cTlrg1LwjcO5HFyeoJeyM9U++mfE6v2+/4PD6O5F/YWiqAGWdIhRiHP4kWg0ONGH4/kXqUlZaXmJlMBQY1BgVuUicFZ6AhjyOdPAQGQF0mqzauYbCxBFdqJao8rVeiGQgJNQkIFwdnB0MKsQrGqgbJPwi2BMV5wrYJetQ129x62LHaedO21nnLq82VwcPnIhEAIfkECQoAAAAsAAAAADYANwAABMwQyEmrvTjrzbv/YCiOZGmeaKqurDAMAlsKRE3EsjjYxJDrPN8PRLPhhh8XDMk0KY/OF5TIm4qKNWtnZxOWuDUvCNw7kcXJ6gl7Iz1T76Z8Tq/b7/g8Po7kX9haKoAZZ0iFGIc/iRaDQ40Yfj+RepSVlpeYAAgJNQkIlgo8NQqUCKI2nzNSIpynBAkzaiCuNl9BIbQ1tl0hraewbrIfpq6pbqsioaKkFwUGNQYFSJudxhUFZ9KUz6IGlbTfrpXcPN6UB2cHlgfcBuqZKBEAIfkECQoAAAAsAAAAADYANwAABMwQyEmrvTjrzbv/YCiOZGmeaKqurDAMAlsKRE3EsjjYxJDrPN8PRLPhhh8XDMk0KY/OF5TIm4qKNWtnZxOWuDUvCNw7kcXJ6gl7Iz1T76Z8Tq/b7yJEopZA4CsKPDUKfxIIgjZ+P3EWe4gECYtqFo82P2cXlTWXQReOiJE5bFqHj4qiUhmBgoSFho59rrKztLVMBQY1BgWzBWe8UUsiuYIGTpMglSaYIcpfnSHEPMYzyB8HZwdrqSMHxAbath2MsqO0zLLorua05OLvJxEAIfkECQoAAAAsAAAAADYANwAABMwQyEmrvTjrzbv/YCiOZGmeaKqurDAMAlsKRE3EsjjYxJDrPN8PRLPhfohELYHQuGBDgIJXU0Q5CKqtOXsdP0otITHjfTtiW2lnE37StXUwFNaSScXaGZvm4r0jU1RWV1hhTIWJiouMjVcFBjUGBY4WBWw1A5RDT3sTkVQGnGYYaUOYPaVip3MXoDyiP3k3GAeoAwdRnRoHoAa5lcHCw8TFxscduyjKIrOeRKRAbSe3I9Um1yHOJ9sjzCbfyInhwt3E2cPo5dHF5OLvJREAOwAAAAAAAAAAAA==" alt="  " />
-            </td>
-        </tr>
-    </table>
-    <!-- Landscape View -->
-    <div style="margin:auto;" id="imgContainer">
-        <img id="splashImage_landscape" src="img/splashscreen_landscape.png" usemap="#splashscreen_landscape" onerror="autoClose('Broken resource. (landscape)');" alt="..." draggable="false" hidefocus="true" />
+
+    <div class="overlay" id="overlay" onclick="toggleCart()"></div>
+
+    <!-- Top Navigation Bar -->
+    <header>
+        <div class="logo">RHINO 28000</div>
+        <button class="cart-icon" onclick="toggleCart()">
+            🛒 Shopping Cart <span class="cart-count" id="cartCount">0</span>
+        </button>
+    </header>
+
+    <div class="container">
+        <!-- Clothing Section -->
+        <h2 class="section-title">Trending Apparel</h2>
+        <div class="products-grid" id="clothingGrid"></div>
+
+        <!-- Gadgets Section -->
+        <h2 class="section-title">Premium Gadgets</h2>
+        <div class="products-grid" id="gadgetsGrid"></div>
     </div>
-                    <a id="dynamicPriceLink1" href="">
-                    <div id="dynamicPriceLabel1" style="position:absolute; text-align:center; vertical-align:middle;"></div>
-                </a>
-                    <map name="splashscreen_landscape">
-        <area name="splashscreen_landscape_area" class="area-map" shape="rect" coords="1373,0,1519,138" href="exit:" id="area_0" alt="...">
-        <area name="splashscreen_landscape_area" class="area-map" shape="rect" coords="991,798,1467,993" href="goto:iap_page_bundles" id="area_1" alt="...">
-    </map>
-    <script type="text/javascript">
-        function areaListenersInit()
-	    {
-	    	if(WEBVIEW_RECEIVED_OS === 'WP8' || WEBVIEW_RECEIVED_OS === 'windows' || WEBVIEW_RECEIVED_OS === 'steam' || WEBVIEW_RECEIVED_OS === 'nintendoSwitch')
-	        {
-	    		var clickables = document.getElementsByClassName('area-map');
-	    		for (elemid = 0; elemid < clickables.length; elemid++) {
-	    			var href_location = clickables[elemid].getAttribute('href');
-	    			clickables[elemid].setAttribute('onclick', "this.blur(); redir('"+href_location+"'); return false;");
-	    		}
-                if (WEBVIEW_RECEIVED_OS === 'nintendoSwitch') {
-                    for (var i = 0; i < clickables.length; i++) {
-                        if (clickables[i].getAttribute('href') !== 'exit:') {
-                            clickables[i].focus();
-                            break;
-                        }
-                    }
-                }
-	        } else {
-	        	
-		            var area_0 = document.getElementById("area_0");
-		            area_0.ontouchend = function(event) {
-		                touchEventHandler(event, area_0);
-		                return false;
-		            }
 
-		            var area_1 = document.getElementById("area_1");
-		            area_1.ontouchend = function(event) {
-		                touchEventHandler(event, area_1);
-		                return false;
-		            }
-	        }
-	    }
+    <!-- Slide-out Shopping Cart -->
+    <div class="cart-drawer" id="cartDrawer">
+        <div class="cart-header">
+            <h3>Your Cart Items</h3>
+            <button class="close-btn" onclick="toggleCart()">&times;</button>
+        </div>
+        <div class="cart-items" id="cartItems"></div>
+        <div class="cart-total">
+            <span>Subtotal:</span>
+            <span id="cartTotal">₹0.00</span>
+        </div>
+        <button class="checkout-btn" onclick="checkout()">Proceed to Pay</button>
+    </div>
 
-        function keyboardListenerInit()
-        {
-            if(WEBVIEW_RECEIVED_OS === 'WP8' || WEBVIEW_RECEIVED_OS === 'windows' || WEBVIEW_RECEIVED_OS === 'steam') {
-                document.onkeyup = function(evt) {
-                    evt = evt || window.event;
-                    if (evt.keyCode === 27) {
-                        redir('exit:');
-                    }
-                };
-            }
+    <script>
+        // Your specific store product database
+        const inventory = [
+            // Clothing Category
+            { id: 1, category: "clothes", name: "Oversized Heavyweight Cotton Hoodie", price: 1899, img: "https://unsplash.com" },
+            { id: 2, category: "clothes", name: "Classic Slim-Fit Denim Jacket", price: 2499, img: "https://unsplash.com" },
+            { id: 3, category: "clothes", name: "Urban Streetwear Cargo Pants", price: 1599, img: "https://unsplash.com" },
+            
+            // Gadgets Category
+            { id: 4, category: "gadgets", name: "ANC Wireless Noise-Cancelling Headphones", price: 4999, img: "https://unsplash.com" },
+            { id: 5, category: "gadgets", name: "Waterproof Smartwatch with AMOLED Display", price: 3499, img: "https://unsplash.com" },
+            { id: 6, category: "gadgets", name: "Mechanical RGB Wireless Gaming Keyboard", price: 2799, img: "https://unsplash.com" }
+        ];
+
+        let cart = [];
+
+        // Distribute inventory to respective HTML layouts
+        function renderStore() {
+            const clothingGrid = document.getElementById('clothingGrid');
+            const gadgetsGrid = document.getElementById('gadgetsGrid');
+
+            const clothingHTML = inventory.filter(p => p.category === "clothes").map(product => createCardHTML(product)).join('');
+            const gadgetsHTML = inventory.filter(p => p.category === "gadgets").map(product => createCardHTML(product)).join('');
+
+            clothingGrid.innerHTML = clothingHTML;
+            gadgetsGrid.innerHTML = gadgetsHTML;
         }
 
-        var ControllerEvent = 
-        {
-                "UNDEFINED" : 0,
-                "LeftTrigger" : 1,
-                "RightTrigger" : 2,
-                "LeftStickX" : 3,
-                "LeftStickY" : 4,
-                "RightStickX" : 5,
-                "RightStickY" : 6,
-                "DpadEventUp" : 7,
-                "DpadEventDown" : 8,
-                "DpadEventLeft" : 9,
-                "DpadEventRight" : 10,
-                "LeftBumper" : 11,
-                "RightBumper" : 12,
-                "ButtonY" : 13,
-                "ButtonA" : 14,
-                "ButtonX" : 15,
-                "ButtonB" : 16,
-                "ButtonStart" : 17,
-                "ButtonSelect" : 18,
-                "ButtonBack" : 19,
-                "LeftStickButton" : 20,
-                "RightStickButton" : 21
-        };
+        function createCardHTML(product) {
+            return `
+                <div class="product-card">
+                    <div class="product-img" style="background-image: url('${product.img}')"></div>
+                    <div class="product-info">
+                        <h3 class="product-title">${product.name}</h3>
+                        <div class="product-price">₹${product.price.toLocaleString('en-IN')}</div>
+                        <button class="add-btn" onclick="addToCart(${product.id})">Add to Cart</button>
+                    </div>
+                </div>
+            `;
+        }
 
-                    var selectedPrice = 1;
-            function onControllerEvent(event, value)
-            {
-                if (event == ControllerEvent.ButtonB && value == 0.0)
-                {
-                    redir('exit:');
-                } else if((event == ControllerEvent.ButtonSelect || event == ControllerEvent.DpadEventRight || event == ControllerEvent.DpadEventDown) && value == 0.0) {
-                    if (selectedPrice) {
-                        document.getElementById('dynamicPriceLabel'+selectedPrice).style.border = '';
-                    }
-                    selectedPrice = selectedPrice % 1 + 1;
-                    document.getElementById('dynamicPriceLabel'+selectedPrice).style.border = '3px solid #FFFFFF';
-                } else if(event == ControllerEvent.ButtonA && value == 0.0) {
-                    if (selectedPrice) {
-                        redir(document.getElementById("dynamicPriceLink"+selectedPrice).href);
-                    } else {
-                        onControllerEvent(ControllerEvent.ButtonSelect, 0.00);
-                    }
-                } else if((event == ControllerEvent.DpadEventLeft || event == ControllerEvent.DpadEventUp) && value == 0.0) {
-                    if (selectedPrice) {
-                        document.getElementById('dynamicPriceLabel'+selectedPrice).style.border = '';
-                    } else {
-                        selectedPrice = 1;
-                    }
-                    selectedPrice = (selectedPrice + 1 - 2) % 1 + 1;
-                    document.getElementById('dynamicPriceLabel'+selectedPrice).style.border = '3px solid #FFFFFF';
-                }
+        function toggleCart() {
+            document.getElementById('cartDrawer').classList.toggle('open');
+            document.getElementById('overlay').classList.toggle('show');
+        }
+
+        function addToCart(id) {
+            const item = inventory.find(p => p.id === id);
+            cart.push(item);
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            document.getElementById('cartCount').innerText = cart.length;
+            const container = document.getElementById('cartItems');
+            
+            if (cart.length === 0) {
+                container.innerHTML = '<p style="color:#64748b; text-align:center; margin-top:20px;">Your cart is completely empty.</p>';
+            } else {
+                container.innerHTML = cart.map((item, index) => `
+                    <div class="cart-item">
+                        <div class="cart-item-details">
+                            <h4>${item.name}</h4>
+                            <strong style="color: #0f172a;">₹${item.price.toLocaleString('en-IN')}</strong>
+                        </div>
+                        <button onclick="removeFromCart(${index})" style="background:none; border:none; color:#ef4444; font-weight:600; cursor:pointer;">Delete</button>
+                    </div>
+                `).join('');
             }
 
-            var priceLinksCount = 1;
-            generatePriceButton = function(dynamicArea) {
-                var dynamicPriceLink  = document.getElementById('dynamicPriceLink'+priceLinksCount);
-                var dynamicPriceLabel = document.getElementById('dynamicPriceLabel'+priceLinksCount);
-                var clickable = [1];
+            const total = cart.reduce((sum, item) => sum + item.price, 0);
+            document.getElementById('cartTotal').innerText = `₹${total.toLocaleString('en-IN')}`;
+        }
 
-                try {
-                    if(WEBVIEW_RECEIVED_OS === 'WP8' || WEBVIEW_RECEIVED_OS === 'windows' || WEBVIEW_RECEIVED_OS === 'steam' || WEBVIEW_RECEIVED_OS === 'nintendoSwitch')
-                    {
-                        dynamicPriceLink.setAttribute('onclick', "this.blur(); redir('" + document.getElementById("area_"+clickable[priceLinksCount-1]).href + "'); return false;");
-                    } else {
-                        dynamicPriceLink.href = document.getElementById("area_"+clickable[priceLinksCount-1]).href;
-                    }
-                    var wWidth = Math.floor(window.innerWidth/2);
-                    var wwidth = wWidth - Math.floor(parseInt(document.getElementById('splashImage_landscape').style.width.replace('px', ''))/2);
-                                            dynamicPriceLabel.style.top        = dynamicArea[1]+'px';
-                        dynamicPriceLabel.style.left       = (wwidth+dynamicArea[0])+'px';
-                                        dynamicPriceLabel.style.width      = (dynamicArea[2]-dynamicArea[0])+'px';
-                    dynamicPriceLabel.style.height     = (dynamicArea[3]-dynamicArea[1])+'px';
-                }catch(err){}
-                priceLinksCount++;
-            };
-            </script>
-    <script type="text/javascript" src="js/base.js"></script>
-</body>
-</html>
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCartUI();
+        }
+
+        function checkout() {
+            if (cart.length === 0) {
