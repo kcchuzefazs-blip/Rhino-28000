@@ -87,7 +87,7 @@
         .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #212121; color: white; padding: 10px 20px; border-radius: 4px; font-size: 13px; z-index: 300; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
         .toast.show { opacity: 1; }
 
-        .checkout-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95); width: 90%; max-width: 420px; max-height: 85vh; overflow-y: auto; background: white; border-radius: 8px; z-index: 250; display: none; padding: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+        .checkout-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95); width: 90%; max-width: 420px; max-height: 85vh; overflow-y: auto; background: white; border-radius: 8px; z-index: 500; display: none; padding: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
         .checkout-modal.open { display: block; }
         .checkout-modal h3 { font-size: 16px; color: #172578; margin-bottom: 4px; }
         .checkout-modal .sub { font-size: 12px; color: #878787; margin-bottom: 16px; }
@@ -95,6 +95,7 @@
         .order-card-top { display: flex; justify-content: space-between; margin-bottom: 6px; }
         .order-items { color: #444; margin-bottom: 8px; }
         .order-customer { background: white; border-radius: 4px; padding: 8px; margin-bottom: 6px; line-height: 1.5; }
+    #checkoutOverlay { z-index: 499; }
     </style>
 </head>
 <body>
@@ -428,6 +429,9 @@
 
     function checkout() {
         if (cart.length === 0) { showToast('Your cart is empty'); return; }
+        // Close the cart drawer first so the details form is never obstructed
+        document.getElementById('cartDrawer').classList.remove('open');
+        document.getElementById('cartOverlay').classList.remove('open');
         document.getElementById('checkoutOverlay').classList.add('open');
         document.getElementById('checkoutModal').classList.add('open');
     }
@@ -469,7 +473,6 @@
         renderCart();
         renderProducts();
         closeCheckoutModal();
-        toggleCart();
         document.getElementById('custName').value = '';
         document.getElementById('custPhone').value = '';
         document.getElementById('custAddress').value = '';
