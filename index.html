@@ -191,11 +191,11 @@
                     <input type="text" class="form-control" id="newCategory" placeholder="e.g. Electronics">
                 </div>
                 <div class="form-group">
-                    <label>Price (₹)</label>
+                    <label>Sell Price (₹)</label>
                     <input type="number" class="form-control" id="newPrice" placeholder="e.g. 49.99" min="0" step="0.01">
                 </div>
                 <div class="form-group">
-                    <label>Original Price (₹) — optional</label>
+                    <label>MRP (₹) — optional</label>
                     <input type="number" class="form-control" id="newOldPrice" placeholder="e.g. 69.99" min="0" step="0.01">
                 </div>
                 <div class="form-group">
@@ -227,7 +227,7 @@
             <div class="table-wrap">
                 <table class="item-list-table">
                     <thead>
-                        <tr><th>Image</th><th>Item</th><th>Category</th><th>Price (₹)</th><th>Original Price (₹)</th><th>Stock</th><th></th><th></th></tr>
+                        <tr><th>Image</th><th>Item</th><th>Category</th><th>Sell Price (₹)</th><th>MRP (₹)</th><th>Stock</th><th></th><th></th></tr>
                     </thead>
                     <tbody id="inventoryTableBody"></tbody>
                 </table>
@@ -398,7 +398,7 @@
                 <div class="product-title">${escapeHtml(p.title)}</div>
                 <div class="price-row">
                     <span class="product-price">₹${p.price.toFixed(2)}</span>
-                    ${p.oldPrice > p.price ? `<span class="old-price">₹${p.oldPrice.toFixed(2)}</span>` : ''}
+                    ${p.oldPrice > p.price ? `<span class="old-price">MRP ₹${p.oldPrice.toFixed(2)}</span>` : ''}
                     ${discount > 0 ? `<span class="discount-tag">${discount}% off</span>` : ''}
                 </div>
                 <div class="stock-tag">${outOfStock ? 'Out of stock' : p.stock + ' in stock'}</div>
@@ -649,7 +649,7 @@
 
         if (isNaN(newPrice) || newPrice < 0) { showToast('Enter a valid price'); return; }
         if (isNaN(newStock) || newStock < 0) { showToast('Enter a valid stock quantity'); return; }
-        if (isNaN(newOldPrice) || newOldPrice < 0) { showToast('Enter a valid original price'); return; }
+        if (isNaN(newOldPrice) || newOldPrice < 0) { showToast('Enter a valid MRP'); return; }
 
         product.price = newPrice;
         product.oldPrice = newOldPrice >= newPrice ? newOldPrice : newPrice;
@@ -712,7 +712,7 @@
                 <td>${escapeHtml(p.title)}${isOut ? ' <span style="color:#ef4444;font-size:11px;font-weight:bold;">OUT</span>' : (isLow ? ' <span style="color:#c98a00;font-size:11px;font-weight:bold;">LOW</span>' : '')}${hasOffer ? ` <span style="color:#388e3c;font-size:11px;font-weight:bold;">${discountPct}% OFFER</span>` : ''}</td>
                 <td>${escapeHtml(p.category)}</td>
                 <td><input type="number" class="form-control" style="width:80px; padding:6px; font-size:12px;" id="price-input-${p.id}" value="${p.price}" min="0" step="0.01"></td>
-                <td><input type="number" class="form-control" style="width:80px; padding:6px; font-size:12px;" id="oldprice-input-${p.id}" value="${p.oldPrice}" min="0" step="0.01" placeholder="same as price"></td>
+                <td><input type="number" class="form-control" style="width:80px; padding:6px; font-size:12px;" id="oldprice-input-${p.id}" value="${p.oldPrice}" min="0" step="0.01" placeholder="same as sell price"></td>
                 <td><input type="number" class="form-control" style="width:65px; padding:6px; font-size:12px;" id="stock-input-${p.id}" value="${p.stock}" min="0" step="1"></td>
                 <td><button class="submit-btn" style="width:auto; padding:6px 10px; font-size:11px;" onclick="updateInventory(${p.id})">Save</button></td>
                 <td><button class="delete-item-btn" onclick="deleteProduct(${p.id})">Delete</button></td>
