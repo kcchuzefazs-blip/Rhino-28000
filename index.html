@@ -153,7 +153,10 @@
     <div id="dashboardView">
         <div class="dash-header">
             <h2>RHINO Store Console</h2>
-            <span style="font-size:12px; color:#388e3c; font-weight:bold;">● Session Data Connected</span>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:12px; color:#388e3c; font-weight:bold;">● Session Data Connected</span>
+                <button class="mode-btn" style="background:#ef4444; color:white;" onclick="lockSellerCentral()">🔒 Lock</button>
+            </div>
         </div>
 
         <div class="metrics-grid">
@@ -257,6 +260,19 @@
 
     <div class="toast" id="toast"></div>
 
+    <!-- SELLER LOGIN MODAL -->
+    <div class="overlay" id="sellerLoginOverlay" onclick="closeSellerLogin()"></div>
+    <div class="checkout-modal" id="sellerLoginModal">
+        <h3>🔒 Seller Central Login</h3>
+        <div class="sub">Enter the seller password to continue.</div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" class="form-control" id="sellerPasswordInput" placeholder="Enter password" onkeydown="if(event.key==='Enter'){submitSellerLogin();}">
+        </div>
+        <button class="submit-btn" onclick="submitSellerLogin()">Unlock</button>
+        <button class="submit-btn" style="background:#878787; margin-top:8px;" onclick="closeSellerLogin()">Cancel</button>
+    </div>
+
     <!-- CHECKOUT DETAILS MODAL -->
     <div class="overlay" id="checkoutOverlay" onclick="closeCheckoutModal()"></div>
     <div class="checkout-modal" id="checkoutModal">
@@ -299,6 +315,12 @@
     let activeCategory = "All";
     let searchTerm = "";
     let viewMode = "browse"; // "browse" | "offers"
+    let sellerAuthenticated = false;
+
+    // Change this to your own password. NOTE: this is a basic front-end
+    // deterrent only — anyone viewing this file's source can see and
+    // change it. It is not real security for sensitive data.
+    const SELLER_PASSWORD = "rhino123";
 
     // ---------- Mode switching ----------
     function switchMode() {
@@ -312,12 +334,53 @@
             label.innerHTML = '🌐 Mode: <strong>Customer Storefront</strong>';
             btn.textContent = 'Open Seller Central';
         } else {
-            dash.style.display = 'block';
-            store.style.display = 'none';
-            label.innerHTML = '🛠️ Mode: <strong>Seller Central</strong>';
-            btn.textContent = 'Back to Storefront';
-            renderDashboard();
+            if (!sellerAuthenticated) {
+                openSellerLogin();
+                return;
+            }
+            enterDashboard();
         }
+    }
+
+    function enterDashboard() {
+        document.getElementById('dashboardView').style.display = 'block';
+        document.getElementById('storefrontView').style.display = 'none';
+        document.getElementById('currentModeLabel').innerHTML = '🛠️ Mode: <strong>Seller Central</strong>';
+        document.getElementById('toggleModeBtn').textContent = 'Back to Storefront';
+        renderDashboard();
+    }
+
+    function openSellerLogin() {
+        document.getElementById('sellerLoginOverlay').classList.add('open');
+        document.getElementById('sellerLoginModal').classList.add('open');
+        document.getElementById('sellerPasswordInput').value = '';
+        setTimeout(() => document.getElementById('sellerPasswordInput').focus(), 50);
+    }
+
+    function closeSellerLogin() {
+        document.getElementById('sellerLoginOverlay').classList.remove('open');
+        document.getElementById('sellerLoginModal').classList.remove('open');
+    }
+
+    function submitSellerLogin() {
+        const entered = document.getElementById('sellerPasswordInput').value;
+        if (entered === SELLER_PASSWORD) {
+            sellerAuthenticated = true;
+            closeSellerLogin();
+            enterDashboard();
+            showToast('Welcome back');
+        } else {
+            showToast('Incorrect password');
+        }
+    }
+
+    function lockSellerCentral() {
+        sellerAuthenticated = false;
+        document.getElementById('dashboardView').style.display = 'none';
+        document.getElementById('storefrontView').style.display = 'block';
+        document.getElementById('currentModeLabel').innerHTML = '🌐 Mode: <strong>Customer Storefront</strong>';
+        document.getElementById('toggleModeBtn').textContent = 'Open Seller Central';
+        showToast('Seller Central locked');
     }
 
     // ---------- Storefront tabs ----------
