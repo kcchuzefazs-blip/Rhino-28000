@@ -151,7 +151,7 @@
         <div class="metrics-grid">
             <div class="metric-card">
                 <div class="metric-title">Total Revenue</div>
-                <div class="metric-value" id="metricRevenue">$0.00</div>
+                <div class="metric-value" id="metricRevenue">₹0.00</div>
             </div>
             <div class="metric-card">
                 <div class="metric-title">Total Orders</div>
@@ -179,11 +179,11 @@
                     <input type="text" class="form-control" id="newCategory" placeholder="e.g. Electronics">
                 </div>
                 <div class="form-group">
-                    <label>Price ($)</label>
+                    <label>Price (₹)</label>
                     <input type="number" class="form-control" id="newPrice" placeholder="e.g. 49.99" min="0" step="0.01">
                 </div>
                 <div class="form-group">
-                    <label>Original Price ($) — optional</label>
+                    <label>Original Price (₹) — optional</label>
                     <input type="number" class="form-control" id="newOldPrice" placeholder="e.g. 69.99" min="0" step="0.01">
                 </div>
                 <div class="form-group">
@@ -225,8 +225,8 @@
         </div>
         <div class="cart-items" id="cartItemsContainer"></div>
         <div class="cart-total-card">
-            <div class="total-row"><span>Subtotal</span><span id="cartSubtotal">$0.00</span></div>
-            <div class="total-row final"><span>Total</span><span id="cartFinalTotal">$0.00</span></div>
+            <div class="total-row"><span>Subtotal</span><span id="cartSubtotal">₹0.00</span></div>
+            <div class="total-row final"><span>Total</span><span id="cartFinalTotal">₹0.00</span></div>
             <button class="checkout-btn" onclick="checkout()">Place Order</button>
         </div>
     </div>
@@ -343,8 +343,8 @@
                 <div class="product-img">${p.icon || '📦'}</div>
                 <div class="product-title">${escapeHtml(p.title)}</div>
                 <div class="price-row">
-                    <span class="product-price">$${p.price.toFixed(2)}</span>
-                    ${p.oldPrice > p.price ? `<span class="old-price">$${p.oldPrice.toFixed(2)}</span>` : ''}
+                    <span class="product-price">₹${p.price.toFixed(2)}</span>
+                    ${p.oldPrice > p.price ? `<span class="old-price">₹${p.oldPrice.toFixed(2)}</span>` : ''}
                     ${discount > 0 ? `<span class="discount-tag">${discount}% off</span>` : ''}
                 </div>
                 <div class="stock-tag">${outOfStock ? 'Out of stock' : p.stock + ' in stock'}</div>
@@ -415,7 +415,7 @@
                 <div class="cart-item">
                     <div class="cart-item-info">
                         <div class="cart-item-title">${escapeHtml(p.title)}${c.size ? ` <span style="color:#878787;font-weight:400;">(Size: ${escapeHtml(c.size)})</span>` : ''}</div>
-                        <div class="cart-item-price">$${p.price.toFixed(2)} each</div>
+                        <div class="cart-item-price">₹${p.price.toFixed(2)} each</div>
                     </div>
                     <div class="qty-controls">
                         <button class="qty-btn" onclick="changeQty(${p.id}, ${c.size ? `'${c.size}'` : 'null'}, -1)">−</button>
@@ -430,8 +430,8 @@
             const p = products.find(pr => pr.id === c.id);
             return sum + (p ? p.price * c.qty : 0);
         }, 0);
-        document.getElementById('cartSubtotal').textContent = `$${subtotal.toFixed(2)}`;
-        document.getElementById('cartFinalTotal').textContent = `$${subtotal.toFixed(2)}`;
+        document.getElementById('cartSubtotal').textContent = `₹${subtotal.toFixed(2)}`;
+        document.getElementById('cartFinalTotal').textContent = `₹${subtotal.toFixed(2)}`;
     }
 
     function checkout() {
@@ -542,7 +542,7 @@
     }
 
     function renderDashboard() {
-        document.getElementById('metricRevenue').textContent = `$${orders.reduce((s, o) => s + o.total, 0).toFixed(2)}`;
+        document.getElementById('metricRevenue').textContent = `₹${orders.reduce((s, o) => s + o.total, 0).toFixed(2)}`;
         document.getElementById('metricOrders').textContent = orders.length;
         document.getElementById('metricItems').textContent = products.length;
         document.getElementById('metricStock').textContent = products.reduce((s, p) => s + p.stock, 0);
@@ -552,7 +552,7 @@
             <tr>
                 <td>${p.icon} ${escapeHtml(p.title)}</td>
                 <td>${escapeHtml(p.category)}</td>
-                <td>$${p.price.toFixed(2)}</td>
+                <td>₹${p.price.toFixed(2)}</td>
                 <td>${p.stock}</td>
                 <td><button class="delete-item-btn" onclick="deleteProduct(${p.id})">Delete</button></td>
             </tr>
@@ -566,7 +566,7 @@
                 <div class="order-card">
                     <div class="order-card-top">
                         <strong>Order #${o.id}</strong>
-                        <span>$${o.total.toFixed(2)}</span>
+                        <span>₹${o.total.toFixed(2)}</span>
                     </div>
                     <div class="order-items">${o.items.map(i => `${i.qty}× ${escapeHtml(i.title)}${i.size ? ` (Size: ${escapeHtml(i.size)})` : ''}`).join(', ')}</div>
                     <div class="order-customer">
