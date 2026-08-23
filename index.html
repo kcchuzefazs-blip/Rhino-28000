@@ -95,6 +95,13 @@
         .order-card-top { display: flex; justify-content: space-between; margin-bottom: 6px; }
         .order-items { color: #444; margin-bottom: 8px; }
         .order-customer { background: white; border-radius: 4px; padding: 8px; margin-bottom: 6px; line-height: 1.5; }
+        .order-status-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+        .status-badge { font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 12px; text-transform: uppercase; }
+        .status-pending { background: #fff3cd; color: #92680a; }
+        .status-dispatched { background: #cfe2ff; color: #1a4fa0; }
+        .status-delivered { background: #d1f2d9; color: #1e7a37; }
+        .status-cancelled { background: #f8d7da; color: #a01c2b; }
+        .status-select { width: auto; padding: 6px 10px; font-size: 12px; }
     #checkoutOverlay { z-index: 499; }
     </style>
 </head>
@@ -466,7 +473,8 @@
             items: orderItems,
             total,
             date: new Date().toLocaleString(),
-            customer: { name, phone, address }
+            customer: { name, phone, address },
+            status: 'Pending'
         });
 
         cart = [];
@@ -525,6 +533,14 @@
         renderCart();
     }
 
+    function updateOrderStatus(orderId, newStatus) {
+        const order = orders.find(o => o.id === orderId);
+        if (!order) return;
+        order.status = newStatus;
+        renderDashboard();
+        showToast(`Order #${orderId} marked as ${newStatus}`);
+    }
+
     function renderDashboard() {
         document.getElementById('metricRevenue').textContent = `$${orders.reduce((s, o) => s + o.total, 0).toFixed(2)}`;
         document.getElementById('metricOrders').textContent = orders.length;
@@ -543,6 +559,7 @@
         `).join('') || `<tr><td colspan="5" class="no-data">No products in catalog.</td></tr>`;
 
         const ordersList = document.getElementById('ordersList');
+        const statuses = ['Pending', 'Dispatched', 'Delivered', 'Cancelled'];
         ordersList.innerHTML = orders.length === 0
             ? `<div class="no-data">No orders yet.</div>`
             : orders.map(o => `
@@ -555,6 +572,12 @@
                     <div class="order-customer">
                         👤 ${escapeHtml(o.customer.name)} &nbsp;|&nbsp; 📞 ${escapeHtml(o.customer.phone)}<br>
                         📍 ${escapeHtml(o.customer.address)}
+                    </div>
+                    <div class="order-status-row">
+                        <span class="status-badge status-${o.status.toLowerCase()}">${o.status}</span>
+                        <select class="form-control status-select" onchange="updateOrderStatus(${o.id}, this.value)">
+                            ${statuses.map(s => `<option value="${s}" ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}
+                        </select>
                     </div>
                     <small style="color:#878787">${o.date}</small>
                 </div>
