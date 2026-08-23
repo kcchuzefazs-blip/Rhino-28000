@@ -18,6 +18,9 @@
         .cart-count { background: #ff1212; color: white; padding: 1px 6px; border-radius: 50%; font-size: 11px; font-weight: bold; }
         .search-container { width: 100%; position: relative; }
         .search-bar { width: 100%; padding: 9px 12px; border: none; border-radius: 2px; font-size: 14px; outline: none; }
+        .nav-tabs { display: flex; gap: 8px; margin-top: 8px; }
+        .nav-tab { flex: 1; background: rgba(255,255,255,0.15); color: white; border: none; padding: 8px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .nav-tab.active { background: white; color: #2874f0; }
 
         .categories-slider { display: flex; gap: 15px; overflow-x: auto; background: white; padding: 15px 4%; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .cat-item { display: flex; flex-direction: column; align-items: center; min-width: 75px; text-align: center; cursor: pointer; }
@@ -125,11 +128,15 @@
             <div class="search-container">
                 <input type="text" class="search-bar" id="searchInput" onkeyup="searchProducts(this.value)" placeholder="Search for items, catalog groups...">
             </div>
+            <div class="nav-tabs">
+                <button class="nav-tab active" id="browseTabBtn" onclick="showBrowseTab()">🏬 Browse</button>
+                <button class="nav-tab" id="offersTabBtn" onclick="showOffersTab()">🔥 Offers</button>
+            </div>
         </header>
 
         <div class="categories-slider" id="dynamicCategorySlider"></div>
 
-        <div class="promo-banner">
+        <div class="promo-banner" id="promoBanner">
             <h2>LIVE PHONE MANAGEMENT</h2>
             <p>Go to Seller Central to manage Catalogs, Shipping rates, & view live order logs!</p>
         </div>
@@ -220,7 +227,7 @@
             <div class="table-wrap">
                 <table class="item-list-table">
                     <thead>
-                        <tr><th>Image</th><th>Item</th><th>Category</th><th>Price (₹)</th><th>Stock</th><th></th><th></th></tr>
+                        <tr><th>Image</th><th>Item</th><th>Category</th><th>Price (₹)</th><th>Original Price (₹)</th><th>Stock</th><th></th><th></th></tr>
                     </thead>
                     <tbody id="inventoryTableBody"></tbody>
                 </table>
@@ -291,6 +298,7 @@
     let orders = []; // { id, items: [{title, qty, price}], total, date }
     let activeCategory = "All";
     let searchTerm = "";
+    let viewMode = "browse"; // "browse" | "offers"
 
     // ---------- Mode switching ----------
     function switchMode() {
@@ -310,6 +318,25 @@
             btn.textContent = 'Back to Storefront';
             renderDashboard();
         }
+    }
+
+    // ---------- Storefront tabs ----------
+    function showBrowseTab() {
+        viewMode = "browse";
+        document.getElementById('browseTabBtn').classList.add('active');
+        document.getElementById('offersTabBtn').classList.remove('active');
+        document.getElementById('dynamicCategorySlider').style.display = 'flex';
+        document.getElementById('promoBanner').style.display = 'block';
+        renderProducts();
+    }
+
+    function showOffersTab() {
+        viewMode = "offers";
+        document.getElementById('offersTabBtn').classList.add('active');
+        document.getElementById('browseTabBtn').classList.remove('active');
+        document.getElementById('dynamicCategorySlider').style.display = 'none';
+        document.getElementById('promoBanner').style.display = 'none';
+        renderProducts();
     }
 
     // ---------- Rendering: storefront ----------
@@ -338,16 +365,26 @@
     function renderProducts() {
         const grid = document.getElementById('mainProductsGrid');
         const title = document.getElementById('storefrontSectionTitle');
-        let filtered = products.filter(p => {
-            const matchesCat = activeCategory === 'All' || p.category === activeCategory;
-            const matchesSearch = p.title.toLowerCase().includes(searchTerm) || p.category.toLowerCase().includes(searchTerm);
-            return matchesCat && matchesSearch;
-        });
+        let filtered;
 
-        title.textContent = searchTerm ? `Results for "${searchTerm}"` : (activeCategory === 'All' ? 'All Live Catalog Items' : activeCategory);
+        if (viewMode === 'offers') {
+            filtered = products.filter(p => {
+                const hasDiscount = p.oldPrice > p.price;
+                const matchesSearch = p.title.toLowerCase().includes(searchTerm) || p.category.toLowerCase().includes(searchTerm);
+                return hasDiscount && matchesSearch;
+            }).sort((a, b) => (1 - a.price / a.oldPrice) - (1 - b.price / b.oldPrice)).reverse();
+            title.textContent = searchTerm ? `Offers matching "${searchTerm}"` : '🔥 Today\'s Best Offers';
+        } else {
+            filtered = products.filter(p => {
+                const matchesCat = activeCategory === 'All' || p.category === activeCategory;
+                const matchesSearch = p.title.toLowerCase().includes(searchTerm) || p.category.toLowerCase().includes(searchTerm);
+                return matchesCat && matchesSearch;
+            });
+            title.textContent = searchTerm ? `Results for "${searchTerm}"` : (activeCategory === 'All' ? 'All Live Catalog Items' : activeCategory);
+        }
 
         if (filtered.length === 0) {
-            grid.innerHTML = `<div class="empty-msg">No products found. Try a different search or category.</div>`;
+            grid.innerHTML = `<div class="empty-msg">${viewMode === 'offers' ? 'No active offers right now. Check back soon!' : 'No products found. Try a different search or category.'}</div>`;
             return;
         }
 
@@ -603,19 +640,24 @@
         const product = products.find(p => p.id === id);
         if (!product) return;
         const priceInput = document.getElementById(`price-input-${id}`);
+        const oldPriceInput = document.getElementById(`oldprice-input-${id}`);
         const stockInput = document.getElementById(`stock-input-${id}`);
         const newPrice = parseFloat(priceInput.value);
+        const newOldPriceRaw = oldPriceInput.value;
+        const newOldPrice = newOldPriceRaw ? parseFloat(newOldPriceRaw) : newPrice;
         const newStock = parseInt(stockInput.value);
 
         if (isNaN(newPrice) || newPrice < 0) { showToast('Enter a valid price'); return; }
         if (isNaN(newStock) || newStock < 0) { showToast('Enter a valid stock quantity'); return; }
+        if (isNaN(newOldPrice) || newOldPrice < 0) { showToast('Enter a valid original price'); return; }
 
         product.price = newPrice;
+        product.oldPrice = newOldPrice >= newPrice ? newOldPrice : newPrice;
         product.stock = newStock;
         renderDashboard();
         renderCategories();
         renderProducts();
-        showToast(`${product.title} updated`);
+        showToast(newOldPrice > newPrice ? `${product.title} offer updated` : `${product.title} updated`);
     }
 
     function updateProductImage(id, input) {
@@ -657,6 +699,8 @@
         tbody.innerHTML = rows.map(p => {
             const isLow = p.stock <= LOW_STOCK_THRESHOLD;
             const isOut = p.stock <= 0;
+            const hasOffer = p.oldPrice > p.price;
+            const discountPct = hasOffer ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
             return `
             <tr style="${isOut ? 'background:#fdecea;' : (isLow ? 'background:#fff8e6;' : '')}">
                 <td>
@@ -665,14 +709,15 @@
                     </div>
                     <input type="file" accept="image/*" style="font-size:10px; width:70px; margin-top:4px;" onchange="updateProductImage(${p.id}, this)">
                 </td>
-                <td>${escapeHtml(p.title)}${isOut ? ' <span style="color:#ef4444;font-size:11px;font-weight:bold;">OUT</span>' : (isLow ? ' <span style="color:#c98a00;font-size:11px;font-weight:bold;">LOW</span>' : '')}</td>
+                <td>${escapeHtml(p.title)}${isOut ? ' <span style="color:#ef4444;font-size:11px;font-weight:bold;">OUT</span>' : (isLow ? ' <span style="color:#c98a00;font-size:11px;font-weight:bold;">LOW</span>' : '')}${hasOffer ? ` <span style="color:#388e3c;font-size:11px;font-weight:bold;">${discountPct}% OFFER</span>` : ''}</td>
                 <td>${escapeHtml(p.category)}</td>
                 <td><input type="number" class="form-control" style="width:80px; padding:6px; font-size:12px;" id="price-input-${p.id}" value="${p.price}" min="0" step="0.01"></td>
+                <td><input type="number" class="form-control" style="width:80px; padding:6px; font-size:12px;" id="oldprice-input-${p.id}" value="${p.oldPrice}" min="0" step="0.01" placeholder="same as price"></td>
                 <td><input type="number" class="form-control" style="width:65px; padding:6px; font-size:12px;" id="stock-input-${p.id}" value="${p.stock}" min="0" step="1"></td>
                 <td><button class="submit-btn" style="width:auto; padding:6px 10px; font-size:11px;" onclick="updateInventory(${p.id})">Save</button></td>
                 <td><button class="delete-item-btn" onclick="deleteProduct(${p.id})">Delete</button></td>
             </tr>`;
-        }).join('') || `<tr><td colspan="7" class="no-data">No products match.</td></tr>`;
+        }).join('') || `<tr><td colspan="8" class="no-data">No products match.</td></tr>`;
 
         const ordersList = document.getElementById('ordersList');
         const statuses = ['Pending', 'Dispatched', 'Delivered', 'Cancelled'];
