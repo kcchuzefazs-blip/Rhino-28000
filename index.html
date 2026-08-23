@@ -165,6 +165,10 @@
                 <div class="metric-title">Units In Stock</div>
                 <div class="metric-value" id="metricStock">0</div>
             </div>
+            <div class="metric-card" style="border-left-color:#ef4444;">
+                <div class="metric-title">Low Stock Items</div>
+                <div class="metric-value" id="metricLowStock" style="color:#ef4444;">0</div>
+            </div>
         </div>
 
         <div class="dash-section">
@@ -199,11 +203,18 @@
         </div>
 
         <div class="dash-section">
-            <h3>Catalog Inventory</h3>
+            <div class="section-header" style="border:none; margin-bottom:8px; padding-bottom:0;">
+                <h3 style="border:none; margin:0; padding:0;">Manage Inventory</h3>
+                <div style="display:flex; align-items:center; gap:10px; font-size:12px;">
+                    <label style="display:flex; align-items:center; gap:4px; font-weight:500; color:#666;">
+                        <input type="checkbox" id="lowStockFilter" onchange="renderDashboard()"> Low stock only
+                    </label>
+                </div>
+            </div>
             <div class="table-wrap">
                 <table class="item-list-table">
                     <thead>
-                        <tr><th>Item</th><th>Category</th><th>Price</th><th>Stock</th><th></th></tr>
+                        <tr><th>Item</th><th>Category</th><th>Price (₹)</th><th>Stock</th><th></th><th></th></tr>
                     </thead>
                     <tbody id="inventoryTableBody"></tbody>
                 </table>
@@ -533,6 +544,25 @@
         renderCart();
     }
 
+    function updateInventory(id) {
+        const product = products.find(p => p.id === id);
+        if (!product) return;
+        const priceInput = document.getElementById(`price-input-${id}`);
+        const stockInput = document.getElementById(`stock-input-${id}`);
+        const newPrice = parseFloat(priceInput.value);
+        const newStock = parseInt(stockInput.value);
+
+        if (isNaN(newPrice) || newPrice < 0) { showToast('Enter a valid price'); return; }
+        if (isNaN(newStock) || newStock < 0) { showToast('Enter a valid stock quantity'); return; }
+
+        product.price = newPrice;
+        product.stock = newStock;
+        renderDashboard();
+        renderCategories();
+        renderProducts();
+        showToast(`${product.title} updated`);
+    }
+
     function updateOrderStatus(orderId, newStatus) {
         const order = orders.find(o => o.id === orderId);
         if (!order) return;
@@ -541,22 +571,32 @@
         showToast(`Order #${orderId} marked as ${newStatus}`);
     }
 
+    const LOW_STOCK_THRESHOLD = 10;
+
     function renderDashboard() {
         document.getElementById('metricRevenue').textContent = `₹${orders.reduce((s, o) => s + o.total, 0).toFixed(2)}`;
         document.getElementById('metricOrders').textContent = orders.length;
         document.getElementById('metricItems').textContent = products.length;
         document.getElementById('metricStock').textContent = products.reduce((s, p) => s + p.stock, 0);
+        document.getElementById('metricLowStock').textContent = products.filter(p => p.stock <= LOW_STOCK_THRESHOLD).length;
 
+        const lowOnly = document.getElementById('lowStockFilter').checked;
         const tbody = document.getElementById('inventoryTableBody');
-        tbody.innerHTML = products.map(p => `
-            <tr>
-                <td>${p.icon} ${escapeHtml(p.title)}</td>
+        const rows = products.filter(p => !lowOnly || p.stock <= LOW_STOCK_THRESHOLD);
+
+        tbody.innerHTML = rows.map(p => {
+            const isLow = p.stock <= LOW_STOCK_THRESHOLD;
+            const isOut = p.stock <= 0;
+            return `
+            <tr style="${isOut ? 'background:#fdecea;' : (isLow ? 'background:#fff8e6;' : '')}">
+                <td>${p.icon} ${escapeHtml(p.title)}${isOut ? ' <span style="color:#ef4444;font-size:11px;font-weight:bold;">OUT</span>' : (isLow ? ' <span style="color:#c98a00;font-size:11px;font-weight:bold;">LOW</span>' : '')}</td>
                 <td>${escapeHtml(p.category)}</td>
-                <td>₹${p.price.toFixed(2)}</td>
-                <td>${p.stock}</td>
+                <td><input type="number" class="form-control" style="width:80px; padding:6px; font-size:12px;" id="price-input-${p.id}" value="${p.price}" min="0" step="0.01"></td>
+                <td><input type="number" class="form-control" style="width:65px; padding:6px; font-size:12px;" id="stock-input-${p.id}" value="${p.stock}" min="0" step="1"></td>
+                <td><button class="submit-btn" style="width:auto; padding:6px 10px; font-size:11px;" onclick="updateInventory(${p.id})">Save</button></td>
                 <td><button class="delete-item-btn" onclick="deleteProduct(${p.id})">Delete</button></td>
-            </tr>
-        `).join('') || `<tr><td colspan="5" class="no-data">No products in catalog.</td></tr>`;
+            </tr>`;
+        }).join('') || `<tr><td colspan="6" class="no-data">No products match.</td></tr>`;
 
         const ordersList = document.getElementById('ordersList');
         const statuses = ['Pending', 'Dispatched', 'Delivered', 'Cancelled'];
