@@ -154,7 +154,7 @@
         <div class="dash-header">
             <h2>RHINO Store Console</h2>
             <div style="display:flex; align-items:center; gap:10px;">
-                <span style="font-size:12px; color:#388e3c; font-weight:bold;">● Session Data Connected</span>
+                <span id="connBadge" style="font-size:12px; color:#878787; font-weight:bold;">● Connecting...</span>
                 <button class="mode-btn" style="background:#ef4444; color:white;" onclick="lockSellerCentral()">🔒 Lock</button>
             </div>
         </div>
@@ -296,22 +296,29 @@
     </div>
 
 <script>
-    // ---------- In-memory state (resets on page reload) ----------
-    let products = [
-        { id: 1, title: "Wireless Bluetooth Earbuds", category: "Electronics", price: 29.99, oldPrice: 49.99, stock: 42, icon: "🎧" },
-        { id: 2, title: "Smart Fitness Watch", category: "Electronics", price: 59.99, oldPrice: 89.99, stock: 18, icon: "⌚" },
-        { id: 3, title: "Stainless Steel Water Bottle", category: "Home", price: 14.99, oldPrice: 19.99, stock: 60, icon: "🧴" },
-        { id: 4, title: "Cotton Bath Towel Set", category: "Home", price: 22.50, oldPrice: 30.00, stock: 25, icon: "🛁" },
-        { id: 5, title: "Running Shoes", category: "Fashion", price: 39.99, oldPrice: 59.99, stock: 33, icon: "👟", sizes: ["6","7","8","9","10","11"] },
-        { id: 6, title: "Denim Jacket", category: "Fashion", price: 44.99, oldPrice: 64.99, stock: 12, icon: "🧥", sizes: ["S","M","L","XL"] },
-        { id: 7, title: "Non-Stick Frying Pan", category: "Kitchen", price: 18.99, oldPrice: 27.99, stock: 30, icon: "🍳" },
-        { id: 8, title: "Ceramic Coffee Mug Set", category: "Kitchen", price: 12.99, oldPrice: 17.99, stock: 50, icon: "☕" },
-        { id: 9, title: "Yoga Mat", category: "Sports", price: 16.99, oldPrice: 24.99, stock: 40, icon: "🧘" },
-        { id: 10, title: "Adjustable Dumbbell Set", category: "Sports", price: 79.99, oldPrice: 109.99, stock: 8, icon: "🏋️" }
-    ];
-    let nextId = 11;
-    let cart = []; // { id, qty }
-    let orders = []; // { id, items: [{title, qty, price}], total, date }
+    // ---------- Firebase Realtime Database ----------
+    const FIREBASE_DB_URL = "https://rhino-4321-default-rtdb.firebaseio.com";
+    let firebaseOnline = false;
+
+    // Seed data used only the very first time the database is empty
+    const defaultProducts = {
+        "1": { id: 1, title: "Wireless Bluetooth Earbuds", category: "Electronics", price: 29.99, oldPrice: 49.99, stock: 42, icon: "🎧" },
+        "2": { id: 2, title: "Smart Fitness Watch", category: "Electronics", price: 59.99, oldPrice: 89.99, stock: 18, icon: "⌚" },
+        "3": { id: 3, title: "Stainless Steel Water Bottle", category: "Home", price: 14.99, oldPrice: 19.99, stock: 60, icon: "🧴" },
+        "4": { id: 4, title: "Cotton Bath Towel Set", category: "Home", price: 22.50, oldPrice: 30.00, stock: 25, icon: "🛁" },
+        "5": { id: 5, title: "Running Shoes", category: "Fashion", price: 39.99, oldPrice: 59.99, stock: 33, icon: "👟", sizes: ["6","7","8","9","10","11"] },
+        "6": { id: 6, title: "Denim Jacket", category: "Fashion", price: 44.99, oldPrice: 64.99, stock: 12, icon: "🧥", sizes: ["S","M","L","XL"] },
+        "7": { id: 7, title: "Non-Stick Frying Pan", category: "Kitchen", price: 18.99, oldPrice: 27.99, stock: 30, icon: "🍳" },
+        "8": { id: 8, title: "Ceramic Coffee Mug Set", category: "Kitchen", price: 12.99, oldPrice: 17.99, stock: 50, icon: "☕" },
+        "9": { id: 9, title: "Yoga Mat", category: "Sports", price: 16.99, oldPrice: 24.99, stock: 40, icon: "🧘" },
+        "10": { id: 10, title: "Adjustable Dumbbell Set", category: "Sports", price: 79.99, oldPrice: 109.99, stock: 8, icon: "🏋️" }
+    };
+
+    // ---------- In-memory state, kept in sync with Firebase ----------
+    let products = [];
+    let nextId = 1;
+    let cart = []; // { id, qty, size }
+    let orders = []; // { id, fbKey, items, total, date, customer, status }
     let activeCategory = "All";
     let searchTerm = "";
     let viewMode = "browse"; // "browse" | "offers"
@@ -321,6 +328,97 @@
     // deterrent only — anyone viewing this file's source can see and
     // change it. It is not real security for sensitive data.
     const SELLER_PASSWORD = "rhino123";
+
+    // ---------- Firebase helpers ----------
+    async function fbGet(path) {
+        const res = await fetch(`${FIREBASE_DB_URL}/${path}.json`);
+        if (!res.ok) throw new Error('Firebase GET failed: ' + res.status);
+        return res.json();
+    }
+    async function fbPut(path, value) {
+        const res = await fetch(`${FIREBASE_DB_URL}/${path}.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(value)
+        });
+        if (!res.ok) throw new Error('Firebase PUT failed: ' + res.status);
+        return res.json();
+    }
+    async function fbPatch(path, value) {
+        const res = await fetch(`${FIREBASE_DB_URL}/${path}.json`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(value)
+        });
+        if (!res.ok) throw new Error('Firebase PATCH failed: ' + res.status);
+        return res.json();
+    }
+    async function fbPost(path, value) {
+        const res = await fetch(`${FIREBASE_DB_URL}/${path}.json`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(value)
+        });
+        if (!res.ok) throw new Error('Firebase POST failed: ' + res.status);
+        return res.json(); // { name: "-Nxyz..." }
+    }
+    async function fbDelete(path) {
+        const res = await fetch(`${FIREBASE_DB_URL}/${path}.json`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Firebase DELETE failed: ' + res.status);
+    }
+
+    function productsObjToArray(obj) {
+        if (!obj) return [];
+        return Object.keys(obj).map(k => ({ ...obj[k], id: parseInt(k, 10) })).sort((a, b) => a.id - b.id);
+    }
+
+    function ordersObjToArray(obj) {
+        if (!obj) return [];
+        const arr = Object.keys(obj).map((k, i) => ({ ...obj[k], fbKey: k }));
+        arr.sort((a, b) => (b._ts || 0) - (a._ts || 0));
+        arr.forEach((o, i) => { if (!o.id) o.id = arr.length - i; });
+        return arr;
+    }
+
+    function setConnectionBadge(online, label) {
+        firebaseOnline = online;
+        const badge = document.getElementById('connBadge');
+        if (!badge) return;
+        badge.textContent = online ? `● ${label || 'Firebase Connected'}` : '● Offline (changes not saved)';
+        badge.style.color = online ? '#388e3c' : '#ef4444';
+    }
+
+    async function loadAppData(silent) {
+        try {
+            const [productsData, ordersData] = await Promise.all([fbGet('products'), fbGet('orders')]);
+
+            if (!productsData) {
+                // First time ever — seed the database
+                await fbPut('products', defaultProducts);
+                products = productsObjToArray(defaultProducts);
+            } else {
+                products = productsObjToArray(productsData);
+            }
+            nextId = products.length ? Math.max(...products.map(p => p.id)) + 1 : 1;
+
+            orders = ordersObjToArray(ordersData);
+
+            setConnectionBadge(true);
+            renderCategories();
+            renderProducts();
+            renderCart();
+            if (document.getElementById('dashboardView').style.display === 'block') {
+                renderDashboard();
+            }
+        } catch (err) {
+            setConnectionBadge(false);
+            if (!silent) showToast('Could not connect to database — check your internet connection');
+            console.error(err);
+        }
+    }
+
+    // Poll for live updates from other devices every 8 seconds
+    setInterval(() => loadAppData(true), 8000);
 
     // ---------- Mode switching ----------
     function switchMode() {
@@ -582,17 +680,17 @@
         const orderItems = cart.map(c => {
             const p = products.find(pr => pr.id === c.id);
             p.stock -= c.qty;
-            return { title: p.title, qty: c.qty, price: p.price, size: c.size };
+            return { title: p.title, qty: c.qty, price: p.price, size: c.size, productId: p.id };
         });
         const total = orderItems.reduce((sum, i) => sum + i.price * i.qty, 0);
-        orders.unshift({
-            id: orders.length + 1,
+        const newOrder = {
             items: orderItems,
             total,
             date: new Date().toLocaleString(),
+            _ts: Date.now(),
             customer: { name, phone, address },
             status: 'Pending'
-        });
+        };
 
         cart = [];
         renderCart();
@@ -602,6 +700,14 @@
         document.getElementById('custPhone').value = '';
         document.getElementById('custAddress').value = '';
         showToast('Order placed! Thank you.');
+
+        // Sync stock deductions and push the new order to Firebase
+        orderItems.forEach(i => {
+            fbPatch(`products/${i.productId}`, { stock: products.find(p => p.id === i.productId).stock }).catch(() => {});
+        });
+        fbPost('orders', newOrder).then(res => {
+            orders.unshift({ ...newOrder, fbKey: res.name, id: orders.length + 1 });
+        }).catch(() => showToast('Order placed, but could not sync to seller — check your connection'));
     }
 
     function showToast(msg) {
@@ -654,17 +760,21 @@
             return;
         }
 
-        products.push({
+        const newProduct = {
             id: nextId++, title, category, price,
             oldPrice: oldPrice >= price ? oldPrice : price,
             stock, icon, image: imageDataUrl || null
-        });
+        };
+        products.push(newProduct);
 
         resetAddProductForm();
         renderDashboard();
         renderCategories();
         renderProducts();
         showToast('Product added to catalog');
+
+        const { id, ...data } = newProduct;
+        fbPut(`products/${id}`, data).catch(() => showToast('Saved locally, but failed to sync — check your connection'));
     }
 
     function addProduct() {
@@ -697,6 +807,7 @@
         renderCategories();
         renderProducts();
         renderCart();
+        fbDelete(`products/${id}`).catch(() => showToast('Deleted locally, but failed to sync — check your connection'));
     }
 
     function updateInventory(id) {
@@ -721,6 +832,9 @@
         renderCategories();
         renderProducts();
         showToast(newOldPrice > newPrice ? `${product.title} offer updated` : `${product.title} updated`);
+
+        fbPatch(`products/${id}`, { price: product.price, oldPrice: product.oldPrice, stock: product.stock })
+            .catch(() => showToast('Saved locally, but failed to sync — check your connection'));
     }
 
     function updateProductImage(id, input) {
@@ -733,17 +847,19 @@
             renderDashboard();
             renderProducts();
             showToast(`${product.title} image updated`);
+            fbPatch(`products/${id}`, { image: product.image }).catch(() => showToast('Saved locally, but failed to sync — check your connection'));
         };
         reader.onerror = () => showToast('Could not read that image');
         reader.readAsDataURL(file);
     }
 
-    function updateOrderStatus(orderId, newStatus) {
-        const order = orders.find(o => o.id === orderId);
+    function updateOrderStatus(fbKey, newStatus) {
+        const order = orders.find(o => o.fbKey === fbKey);
         if (!order) return;
         order.status = newStatus;
         renderDashboard();
-        showToast(`Order #${orderId} marked as ${newStatus}`);
+        showToast(`Order #${order.id} marked as ${newStatus}`);
+        fbPatch(`orders/${fbKey}`, { status: newStatus }).catch(() => showToast('Saved locally, but failed to sync — check your connection'));
     }
 
     const LOW_STOCK_THRESHOLD = 10;
@@ -799,7 +915,7 @@
                     </div>
                     <div class="order-status-row">
                         <span class="status-badge status-${o.status.toLowerCase()}">${o.status}</span>
-                        <select class="form-control status-select" onchange="updateOrderStatus(${o.id}, this.value)">
+                        <select class="form-control status-select" onchange="updateOrderStatus('${o.fbKey}', this.value)">
                             ${statuses.map(s => `<option value="${s}" ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}
                         </select>
                     </div>
@@ -809,9 +925,7 @@
     }
 
     // ---------- Init ----------
-    renderCategories();
-    renderProducts();
-    renderCart();
+    loadAppData();
 </script>
 </body>
 </html>
