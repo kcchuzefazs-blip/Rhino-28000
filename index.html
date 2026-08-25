@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RHINO 28000 | Store Management Master</title>
+
+    <!-- PWA: installable on phone home screen -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2874f0">
+    <link rel="icon" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RHINO Store">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: Roboto, Arial, sans-serif; }
         body { background-color: #f1f3f6; color: #212121; padding-bottom: 20px; }
@@ -935,6 +945,15 @@
 
     // ---------- Init ----------
     loadAppData();
+
+    // Register the service worker so the app can be installed and opens
+    // instantly on repeat visits. Safe to ignore if it fails (e.g. when
+    // opened as a local file instead of a hosted page).
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('service-worker.js').catch(() => {});
+        });
+    }
 </script>
 </body>
 </html>
