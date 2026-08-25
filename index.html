@@ -427,7 +427,15 @@
             renderCategories();
             renderProducts();
             renderCart();
-            if (document.getElementById('dashboardView').style.display === 'block') {
+
+            // Skip re-rendering the inventory table while the seller is
+            // actively typing into one of its fields — otherwise a
+            // background refresh wipes out the edit before it's saved.
+            const activeEl = document.activeElement;
+            const isEditingInventoryField = activeEl && activeEl.tagName === 'INPUT' &&
+                activeEl.closest && activeEl.closest('#inventoryTableBody');
+
+            if (document.getElementById('dashboardView').style.display === 'block' && !isEditingInventoryField) {
                 renderDashboard();
             }
         } catch (err) {
