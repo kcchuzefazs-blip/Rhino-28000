@@ -369,7 +369,12 @@
 
     function productsObjToArray(obj) {
         if (!obj) return [];
-        return Object.keys(obj).map(k => ({ ...obj[k], id: parseInt(k, 10) })).sort((a, b) => a.id - b.id);
+        // Firebase's REST API returns purely-numeric-keyed objects as a JSON
+        // array (with nulls for missing indices) instead of a real object.
+        // Handle both shapes safely, and trust each product's own stored
+        // "id" field rather than the key.
+        const values = Array.isArray(obj) ? obj : Object.values(obj);
+        return values.filter(Boolean).sort((a, b) => a.id - b.id);
     }
 
     function ordersObjToArray(obj) {
@@ -380,12 +385,14 @@
         return arr;
     }
 
-    function setConnectionBadge(online, label) {
+    function setConnectionBadge(online, label, errorText) {
         firebaseOnline = online;
         const badge = document.getElementById('connBadge');
+        const errEl = document.getElementById('connError');
         if (!badge) return;
         badge.textContent = online ? `● ${label || 'Firebase Connected'}` : '● Offline (changes not saved)';
         badge.style.color = online ? '#388e3c' : '#ef4444';
+        if (errEl) errEl.textContent = (!online && errorText) ? `Error detail: ${errorText}` : '';
     }
 
     async function loadAppData(silent) {
@@ -411,7 +418,7 @@
                 renderDashboard();
             }
         } catch (err) {
-            setConnectionBadge(false);
+            setConnectionBadge(false, null, (err && err.message) ? err.message : String(err));
             if (!silent) showToast('Could not connect to database — check your internet connection');
             console.error(err);
         }
@@ -773,8 +780,7 @@
         renderProducts();
         showToast('Product added to catalog');
 
-        const { id, ...data } = newProduct;
-        fbPut(`products/${id}`, data).catch(() => showToast('Saved locally, but failed to sync — check your connection'));
+        fbPut(`products/${newProduct.id}`, newProduct).catch(() => showToast('Saved locally, but failed to sync — check your connection'));
     }
 
     function addProduct() {
